@@ -1,0 +1,157 @@
+version: '3.5'
+
+services:
+
+  # cli
+  video-php-cli:
+    container_name: video-php-cli
+    build:
+      context: ./docker/php/cli
+      dockerfile: Dockerfile
+    volumes:
+    - .:/var/www
+    depends_on:
+    - video-postgres
+    - video-rabbitmq
+    tty: true # don`t stop
+
+  # fpm
+  video-php-fpm:
+    container_name: video-php-fpm
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    volumes:
+    - .:/var/www
+
+  # nginx api
+  video-nginx-api:
+    container_name: video-nginx-api
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    volumes:
+    - .:/var/www
+    ports:
+    - "3107:80"
+
+  # nginx upload
+  video-nginx-upload:
+    container_name: video-nginx-upload
+    build:
+      context: ./docker/nginx/upload
+      dockerfile: Dockerfile
+    volumes:
+    - ./data/upload:/var/www
+    ports:
+    - "1986:80"
+
+  # nginx static
+  video-nginx-static:
+    container_name: video-nginx-static
+    build:
+      context: ./docker/nginx/static
+      dockerfile: Dockerfile
+    volumes:
+    - ./templates/static:/var/www
+    ports:
+    - "8031:80"
+
+  # node ws
+  video-node-cli:
+    container_name: video-node-cli
+    image: node:10.11-jessie
+    volumes:
+    - ./templates/static:/var/www
+    working_dir: /var/www
+    tty: true # don`t stop
+
+  # postgres host.docker.internal
+  video-postgres:
+    container_name: video-pgsql
+    image: postgres:alpine # :12.0-alpine
+    volumes:
+    - ./data/postgres:/var/lib/postgresql/data
+    environment:
+    - "POSTGRES_USER=postgres"
+    - "POSTGRES_PASSWORD=postgres"
+    - "POSTGRES_DB=rabbitmq"
+    - "PGDATA=./data/postgres"
+    ports:
+    - "5432:5432"
+    tty: true # don`t stop
+    restart: unless-stopped
+
+  video-pgadmin:
+    container_name: video-pga
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-pgadmin}
+    # volumes:
+    # - ./data/postgres:/root/.pgadmin
+    ports:
+    - "${PGADMIN_PORT:-5050}:80"
+    restart: unless-stopped
+
+  # mailer
+  video-mailer:
+    container_name: video-mailer
+    image: mailhog/mailhog
+    restart: unless-stopped
+    ports:
+    - "1025:1025"
+    - "8019:8025"
+
+  # zookeeper:
+  #   container_name: zookeeper
+  #   image: wurstmeister/zookeeper
+  #   ports:
+  #   - "2181:2181"
+
+  # kafka:
+  #   container_name: kafka
+  #   image: wurstmeister/kafka
+  #   ports:
+  #   - "9092:9092"
+  #   depends_on:
+  #   - zookeeper
+  #   environment:
+  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #     KAFRA_CREATE_TOPICS: notifications:1:1 # ,another_topic_name
+  #     #./bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test --config retention.ms=1680000
+  #     KAFKA_LISTENERS: PLAINTEXT://kafka:9092
+
+  # rabbitmq
+  video-rabbitmq:
+    container_name: video-rabbit
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_ERLANG_COOKIE: SWQOKODSQALRPCLNMEQG
+      RABBITMQ_DEFAULT_USER: rabbit
+      RABBITMQ_DEFAULT_PASS: rabbit
+    ports:
+    - "1919:15672" # dashboard
+    - "5672:5672"
+    volumes:
+    - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+
+  video-php-ws:
+    container_name: video-php-ws
+    build:
+      context: ./docker/php/websocket
+      dockerfile: Dockerfile
+    volumes:
+    - .:/var/www
+    # - .:/superman:cached
+    ports:
+    - "9001:9001"
+    tty: true # don`t stop
+
+  video-php-processor:
+    container_name: video-php-processor
+    build:
+      context: ./docker/php/processor
+      dockerfile: Dockerfile
+    volumes:
+    - .:/var/www

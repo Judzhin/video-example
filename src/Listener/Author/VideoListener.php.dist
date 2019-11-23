@@ -1,0 +1,78 @@
+<?php
+/**
+ * @access protected
+ * @author Judzhin Miles <info[woof-woof]msbios.com>
+ */
+
+namespace App\EventListener\Author;
+
+use App\Entity\User;
+use App\Service\Amqp\AMQPHelper;
+use Kafka\Producer;
+use MSBios\AMQP\AMQPStreamConnectionAwareTrait;
+use PhpAmqpLib\Channel\AMQPChannel;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Message\AMQPMessage;
+use Zend\EventManager\EventInterface;
+use Zend\Json\Encoder;
+
+/**
+ * Class VideoListener
+ * @package App\EventListener\Author
+ */
+class VideoListener
+{
+    // /** @var Producer */
+    // protected $producer;
+    use AMQPStreamConnectionAwareTrait;
+
+    /**
+     * VideoListener constructor.
+     * @param Producer $producer
+     */
+    // public function __construct(Producer $producer)
+    public function __construct(AMQPStreamConnection $connection)
+    {
+        // $this->producer = $producer;
+        $this->setAMQPStreamConnection($connection);
+    }
+
+    /**
+     * @param EventInterface $event
+     */
+    public function __invoke(EventInterface $event): void
+    {
+        /** @var User $author */
+        $author = $event->getParam('author');
+
+        // Kafka version
+        // $this->producer->send([
+        //     'topic' => 'notifications',
+        //     'value' => Encoder::encode([
+        //         'type' => 'notification',
+        //         'user_id' => $author->getId(),
+        //         'message' => 'Video created'
+        //     ]),
+        //     'key' => ''
+        // ]);
+
+        /** @var AMQPStreamConnection $connection */
+        $connection = $this->getAMQPStreamConnection();
+
+        /** @var AMQPChannel $channel */
+        $channel = $this->getAMQPStreamConnection()->channel();
+
+        AMQPHelper::initNotifications($channel);
+        AMQPHelper::registerShutdown($connection, $channel);
+
+        /** @var AMQPMessage $message */
+        $message = new AMQPMessage(Encoder::encode([
+            'type' => 'processing.thumbnail',
+            'user_id' => $author->getId(),
+            'message' => 'Video created'
+        ]), ['content_type' => 'text/plain']);
+
+        // $channel->basic_publish($message, AMQPHelper::EXCHANGE_NOTIFICATIONS);
+        $channel->basic_publish($message, 'processing');
+    }
+}

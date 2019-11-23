@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+        xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+    http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="Zend\Expressive\Authentication\OAuth2\Entity\ClientEntity" table="oauth_clients" repository-class="App\Repository\ClientRepository">
+        <lifecycle-callbacks>
+            <lifecycle-callback type="prePersist" method="timestampOnCreate"/>
+        </lifecycle-callbacks>
+        <id name="identifier" column="id" type="string" />
+        <field name="name" column="name" type="string" nullable="true" />
+        <!--<field name="userIdentifier" column="user_id" type="string" nullable="true" />-->
+        <field name="secret" column="secret" type="string" nullable="true" />
+        <field name="redirectUri" column="redirect_uri" type="array" nullable="false" />
+        <field name="personalAccessClient" column="personal_access_client" type="boolean" nullable="true" />
+        <field name="passwordClient" column="password_client" type="boolean" nullable="true" />
+        <field name="revoked" column="revoked" type="boolean" nullable="true" />
+        <field name="createdAt" column="created_at" type="datetime" nullable="false" />
+        <field name="updatedAt" column="updated_at" type="datetime" nullable="true" />
+    </entity>
+</doctrine-mapping>
