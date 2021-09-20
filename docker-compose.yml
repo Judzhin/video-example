@@ -3,86 +3,86 @@ version: '3.5'
 services:
 
   # cli
-  video-php-cli:
+  php-cli:
     container_name: video-php-cli
     build:
-      context: ./docker/php/cli
+      context: .docker/php/cli
       dockerfile: Dockerfile
     volumes:
-    - .:/var/www
+      - .:/var/www
     depends_on:
-    - video-postgres
-    - video-rabbitmq
+      - postgres
+      - rabbitmq
     tty: true # don`t stop
 
   # fpm
-  video-php-fpm:
+  php-fpm:
     container_name: video-php-fpm
     build:
-      context: ./docker/php
+      context: .docker/php
       dockerfile: Dockerfile
     volumes:
-    - .:/var/www
+      - .:/var/www
 
   # nginx api
-  video-nginx-api:
+  nginx-api:
     container_name: video-nginx-api
     build:
-      context: ./docker/nginx
+      context: .docker/nginx
       dockerfile: Dockerfile
     volumes:
-    - .:/var/www
+      - .:/var/www
     ports:
-    - "3107:80"
+      - 3107:80
 
   # nginx upload
-  video-nginx-upload:
+  nginx-upload:
     container_name: video-nginx-upload
     build:
-      context: ./docker/nginx/upload
+      context: .docker/nginx/upload
       dockerfile: Dockerfile
     volumes:
-    - ./data/upload:/var/www
+      - ./data/upload:/var/www
     ports:
-    - "1986:80"
+      - 1986:80
 
   # nginx static
-  video-nginx-static:
+  nginx-static:
     container_name: video-nginx-static
     build:
-      context: ./docker/nginx/static
+      context: .docker/nginx/static
       dockerfile: Dockerfile
     volumes:
-    - ./templates/static:/var/www
+      - ./templates/static:/var/www
     ports:
-    - "8031:80"
+      - 8031:80
 
   # node ws
-  video-node-cli:
+  node-cli:
     container_name: video-node-cli
     image: node:10.11-jessie
     volumes:
-    - ./templates/static:/var/www
+      - ./templates/static:/var/www
     working_dir: /var/www
     tty: true # don`t stop
 
   # postgres host.docker.internal
-  video-postgres:
+  postgres:
     container_name: video-pgsql
     image: postgres:alpine # :12.0-alpine
     volumes:
-    - ./data/postgres:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
     environment:
-    - "POSTGRES_USER=postgres"
-    - "POSTGRES_PASSWORD=postgres"
-    - "POSTGRES_DB=rabbitmq"
-    - "PGDATA=./data/postgres"
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-rabbitmq}
+      PGDATA: ${PGDATA:-./data/postgres}
     ports:
-    - "5432:5432"
+      - 5432:5432
     tty: true # don`t stop
     restart: unless-stopped
 
-  video-pgadmin:
+  pgadmin:
     container_name: video-pga
     image: dpage/pgadmin4
     environment:
@@ -91,17 +91,17 @@ services:
     # volumes:
     # - ./data/postgres:/root/.pgadmin
     ports:
-    - "${PGADMIN_PORT:-5050}:80"
+      - ${PGADMIN_PORT:-5050}:80
     restart: unless-stopped
 
   # mailer
-  video-mailer:
+  mailer:
     container_name: video-mailer
     image: mailhog/mailhog
     restart: unless-stopped
     ports:
-    - "1025:1025"
-    - "8019:8025"
+      - 1025:1025
+      - 8019:8025
 
   # zookeeper:
   #   container_name: zookeeper
@@ -123,7 +123,7 @@ services:
   #     KAFKA_LISTENERS: PLAINTEXT://kafka:9092
 
   # rabbitmq
-  video-rabbitmq:
+  rabbitmq:
     container_name: video-rabbit
     image: rabbitmq:3-management
     environment:
@@ -131,27 +131,27 @@ services:
       RABBITMQ_DEFAULT_USER: rabbit
       RABBITMQ_DEFAULT_PASS: rabbit
     ports:
-    - "1919:15672" # dashboard
-    - "5672:5672"
+      - 1919:15672 # dashboard
+      - 5672:5672
     volumes:
-    - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - .docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
 
-  video-php-ws:
+  php-ws:
     container_name: video-php-ws
     build:
-      context: ./docker/php/websocket
+      context: .docker/php/websocket
       dockerfile: Dockerfile
     volumes:
-    - .:/var/www
+      - .:/var/www
     # - .:/superman:cached
     ports:
-    - "9001:9001"
+      - 9001:9001
     tty: true # don`t stop
 
-  video-php-processor:
+  php-processor:
     container_name: video-php-processor
     build:
-      context: ./docker/php/processor
+      context: .docker/php/processor
       dockerfile: Dockerfile
     volumes:
-    - .:/var/www
+      - .:/var/www
